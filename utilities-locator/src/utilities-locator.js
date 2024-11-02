@@ -15,10 +15,14 @@ const AppPage = () => {
     fetchFacilities();
   }, []);
 
+  useEffect(() => {
+    fetchFacilities();
+  }, [activeTab]);
+
   const fetchFacilities = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('/api/facilities');
+      const response = await fetch(`http://localhost:5000/api/facilities?type=${activeTab}`);
       if (!response.ok) {
         throw new Error('Failed to fetch facilities');
       }
