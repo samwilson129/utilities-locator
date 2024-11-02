@@ -1,0 +1,212 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  background: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-OH35XF1CBzi31aHj9FkycvMyRNlLd0.png') no-repeat center center fixed;
+  background-size: cover;
+  min-height: 100vh;
+  color: white;
+}
+
+.app-container {
+  min-height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+}
+
+.navbar {
+  background-color: rgba(0, 0, 0, 0.9);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: linear-gradient(45deg, #fff, #7dd3fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.settings-container {
+  position: relative;
+}
+
+.settings-button {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background-color 0.3s;
+}
+
+.settings-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.settings-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-width: 200px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  border-radius: 4px;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.search-container input {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  margin-bottom: 2rem;
+}
+
+.map-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+}
+
+.map-placeholder {
+  background-color: rgba(0, 0, 0, 0.3);
+  height: 300px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.tab-icon {
+  width: 20px;
+  height: 20px;
+  filter: invert(1);
+}
+
+.tab.active {
+  background-color: rgba(125, 211, 252, 0.3);
+  transform: translateY(-2px);
+}
+
+.facilities-section {
+  margin-bottom: 2rem;
+}
+
+.facilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.facility-card {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  transition: transform 0.3s ease;
+}
+
+.facility-card:hover {
+  transform: translateY(-4px);
+}
+
+.locate-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: rgba(125, 211, 252, 0.3);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.locate-button:hover {
+  background-color: rgba(125, 211, 252, 0.4);
+}
+
+@media (max-width: 768px) {
+  .nav-content {
+    padding: 0 1rem;
+  }
+
+  .main-content {
+    padding: 1rem;
+  }
+
+  .tabs-container {
+    gap: 0.5rem;
+  }
+
+  .tab {
+    padding: 0.5rem 1rem;
+  }
+}
