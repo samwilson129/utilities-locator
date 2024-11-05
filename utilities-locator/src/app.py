@@ -6,9 +6,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
-
-# Configure your database URI here
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///base_database.sql'  # Using SQLite for this example
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///base_database.sql' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)

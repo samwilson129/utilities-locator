@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Settings, User, LogOut, UserPlus } from 'react-feather';
 import './App.css';
 
@@ -11,15 +11,7 @@ const AppPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    fetchFacilities();
-  }, []);
-
-  useEffect(() => {
-    fetchFacilities();
-  }, [activeTab]);
-
-  const fetchFacilities = async () => {
+  const fetchFacilities = useCallback(async () => {
     setIsLoading(true);
     try {
       const response = await fetch(`http://localhost:5000/api/facilities?type=${activeTab}`);
@@ -33,7 +25,11 @@ const AppPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    fetchFacilities();
+  }, [fetchFacilities]);
 
   const filteredFacilities = facilities.filter(facility => 
     (activeTab === 'all' || facility.type === activeTab) &&
@@ -128,6 +124,15 @@ const AppPage = () => {
                  alt="" 
                  className="tab-icon" />
             Restaurants
+          </button>
+          <button 
+            onClick={() => setActiveTab('atm')} 
+            className={`tab ${activeTab === 'atm' ? 'active' : ''}`}
+          >
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-050JVKjJZ4EsX5xO5hC8a6K2I1MUhc.png" 
+                 alt="" 
+                 className="tab-icon" />
+            ATMs
           </button>
         </div>
 
