@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Settings, User, LogOut, UserPlus } from 'react-feather';
+import { Settings, X, ChevronDown, ChevronUp } from 'react-feather';
 import './App.css';
 
 const AppPage = () => {
@@ -10,11 +10,19 @@ const AppPage = () => {
   const [facilities, setFacilities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showRadiusPanel, setShowRadiusPanel] = useState(false);
+  const [appSettings, setAppSettings] = useState({
+    mapStyle: 'street',
+    theme: 'light',
+    searchRadius: 5,
+  });
+
+  const radiusOptions = [1, 2, 5, 10, 20, 30, 40, 60];
 
   const fetchFacilities = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/facilities?type=${activeTab}`);
+      const response = await fetch(`http://localhost:5000/api/facilities?type=${activeTab}&radius=${appSettings.searchRadius}`);
       if (!response.ok) {
         throw new Error('Failed to fetch facilities');
       }
@@ -25,7 +33,7 @@ const AppPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab]);
+  }, [activeTab, appSettings.searchRadius]);
 
   useEffect(() => {
     fetchFacilities();
@@ -36,8 +44,46 @@ const AppPage = () => {
     facility.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleSettingChange = (setting, value) => {
+    setAppSettings(prev => ({ ...prev, [setting]: value }));
+  };
+
+  const SettingsPanel = () => (
+    <div className="settings-panel">
+      <div className="settings-header">
+        <h2>Website Settings</h2>
+        <button onClick={() => setShowSettings(false)}><X size={24} /></button>
+      </div>
+      <div className="settings-content">
+        <div className="setting-item">
+          <label htmlFor="mapStyle">Map Style:</label>
+          <select
+            id="mapStyle"
+            value={appSettings.mapStyle}
+            onChange={(e) => handleSettingChange('mapStyle', e.target.value)}
+          >
+            <option value="street">Street</option>
+            <option value="satellite">Satellite</option>
+            <option value="terrain">Terrain</option>
+          </select>
+        </div>
+        <div className="setting-item">
+          <label htmlFor="theme">Theme:</label>
+          <select
+            id="theme"
+            value={appSettings.theme}
+            onChange={(e) => handleSettingChange('theme', e.target.value)}
+          >
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="app-container">
+    <div className={`app-container ${appSettings.theme}`}>
       <nav className="navbar">
         <div className="nav-content">
           <h1 className="site-title">FIND-IT</h1>
@@ -45,25 +91,11 @@ const AppPage = () => {
             <button className="settings-button" onClick={() => setShowSettings(!showSettings)}>
               <Settings size={24} />
             </button>
-            {showSettings && (
-              <div className="settings-dropdown">
-                <button className="dropdown-item">
-                  <User size={16} />
-                  User Settings
-                </button>
-                <button className="dropdown-item">
-                  <UserPlus size={16} />
-                  Create Account
-                </button>
-                <button className="dropdown-item">
-                  <LogOut size={16} />
-                  Log Out
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </nav>
+
+      {showSettings && <SettingsPanel />}
 
       <main className="main-content">
         <div className="search-container">
@@ -75,10 +107,36 @@ const AppPage = () => {
           />
         </div>
 
+        <div className="radius-panel">
+          <button 
+            className="radius-toggle" 
+            onClick={() => setShowRadiusPanel(!showRadiusPanel)}
+          >
+            Search Radius: {appSettings.searchRadius} km
+            {showRadiusPanel ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </button>
+          {showRadiusPanel && (
+            <div className="radius-options">
+              {radiusOptions.map(radius => (
+                <button
+                  key={radius}
+                  className={`radius-option ${appSettings.searchRadius === radius ? 'active' : ''}`}
+                  onClick={() => {
+                    handleSettingChange('searchRadius', radius);
+                    setShowRadiusPanel(false);
+                  }}
+                >
+                  {radius} km
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="map-container">
           <h2>Interactive Map</h2>
           <div className="map-placeholder">
-            <span>Map placeholder</span>
+            <span>Map placeholder ({appSettings.mapStyle} view)</span>
           </div>
         </div>
 
@@ -137,7 +195,7 @@ const AppPage = () => {
         </div>
 
         <section className="facilities-section">
-          <h2>Nearby Facilities</h2>
+          <h2>Nearby Facilities (within {appSettings.searchRadius} km)</h2>
           {isLoading ? (
             <p className="loading">Loading facilities...</p>
           ) : (
@@ -146,7 +204,7 @@ const AppPage = () => {
                 <div key={facility.id} className="facility-card">
                   <h3>{facility.name}</h3>
                   <p>Type: {facility.type}</p>
-                  <p>Distance: {facility.distance}</p>
+                  <p>Distance: {facility.distance} km</p>
                 </div>
               ))}
             </div>
