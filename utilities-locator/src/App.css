@@ -1,18 +1,20 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-/* Base Styles */
 body {
   margin: 0;
   padding: 0;
   font-family: 'Poppins', sans-serif;
   min-height: 100vh;
+  background: linear-gradient(to right, #2a1b3d, #1a1a1a, #2a1b3d);
 }
 
-/* Theme Containers */
 .app-container {
   min-height: 100vh;
   background-color: #1a1a1a;
   color: #ffffff;
+  margin: 0 auto;
+  max-width: 1400px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .app-container.light {
@@ -41,30 +43,21 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: relative;
 }
 
-.header-container {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.header-gif {
-  width: 40px;
+.nav-content::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 180px;
+  right: 70px;
   height: 40px;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.site-title {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  background: linear-gradient(45deg, #fff, #7dd3fc);
-  -webkit-background-clip: text;
-   background-clip: text;
-  -webkit-text-fill-color: transparent;
+  transform: translateY(-50%);
+  background: url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-uephzfQ8QgluggH5ehPQ7x8QKLqQ7l.png') no-repeat center center;
+  background-size: cover;
+  opacity: 1;
+  pointer-events: none;
 }
 
 .site-title {
@@ -231,14 +224,6 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 0.5rem;
   margin-top: 0.5rem;
-  background-color: #2d2d2d;
-  padding: 0.5rem;
-  border-radius: 8px;
-}
-
-.light .radius-options {
-  background-color: #ffffff;
-  border: 1px solid #dddddd;
 }
 
 .radius-option {
@@ -257,11 +242,6 @@ body {
 }
 
 .radius-option.active {
-  background-color: #0077be;
-  color: #ffffff;
-}
-
-.light .radius-option.active {
   background-color: #0077be;
   color: #ffffff;
 }
@@ -338,11 +318,6 @@ body {
   transform: translateY(-2px);
 }
 
-.light .tab.active {
-  background-color: #0077be;
-  color: #ffffff;
-}
-
 /* Facilities Section */
 .facilities-section {
   margin-bottom: 2rem;
@@ -399,6 +374,11 @@ body {
     padding: 0 1rem;
   }
 
+  .nav-content::after {
+    left: 150px;
+    right: 50px;
+  }
+
   .main-content {
     padding: 1rem;
   }
@@ -423,6 +403,11 @@ body {
 @media (max-width: 480px) {
   .site-title {
     font-size: 1.5rem;
+  }
+
+  .nav-content::after {
+    left: 120px;
+    right: 40px;
   }
 
   .search-container input,
