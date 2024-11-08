@@ -425,3 +425,109 @@ body {
     padding: 1rem;
   }
 }
+.radius-panel {
+  margin: 1.5rem 0;
+  background: var(--background-color, #ffffff);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.radius-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.radius-input-container label {
+  font-weight: 500;
+  color: var(--text-color, #333);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.radius-input {
+  width: 100%;
+  padding: 0.75rem 3rem 0.75rem 1rem;
+  border: 2px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: var(--input-background, #f5f5f5);
+}
+
+.radius-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #007aff);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.unit {
+  position: absolute;
+  right: 1rem;
+  color: var(--text-muted, #666);
+  pointer-events: none;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Dark mode support */
+.dark .radius-input {
+  --input-background: #2a2a2a;
+  --border-color: #404040;
+  --text-color: #ffffff;
+  --text-muted: #999;
+}
+
+.radius-container {
+  margin-bottom: 1rem;
+}
+
+.radius-container label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.radius-container input {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.tab {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+@media (max-width: 768px) {
+  .tab {
+    max-width: 100px;
+  }
+}
+
+.setting-item select {
+  max-width: 100%;
+}
+
+.site-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+@media (max-width: 480px) {
+  .site-title {
+    max-width: 150px;
+  }
+}
