@@ -5,6 +5,7 @@ import geopy.distance
 import subprocess
 
 app = Flask(__name__)
+initialized = False
 
 def run_creation_script():
     try:
@@ -12,6 +13,21 @@ def run_creation_script():
         print("Database creation script executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error running database creation script: {e}")
+
+def run_trigger_creation():
+    try:
+        subprocess.run(['python', 'triggers.py'], check=True)  
+        print("Trigger creation script executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error running trigger creation script: {e}")
+
+@app.before_request
+def initialize():
+    global initialized
+    if not initialized:
+        run_creation_script()
+        run_trigger_creation()
+        initialized = True
 
 def get_db_connection():
     try:
@@ -72,7 +88,7 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
                     row["distance"] = round(distance, 2)
 
                     if utility_type == "bus_stop":
-                        cursor.execute("""
+                        cursor.execute(""" 
                             SELECT b.bus_name
                             FROM bus_arrival b
                             WHERE b.stop_name = %s;
@@ -104,7 +120,6 @@ def get_utilities_route():
 
 @app.route('/')
 def index():
-    run_creation_script()  
     return render_template('index.html')
 
 if __name__ == '__main__':

@@ -124,10 +124,7 @@
                 return;
             }
 
-            // Clear previous markers
             clearPreviousMarkers();
-            
-            // Recenter map to the user's current location
             map.setView([lat, lng], 13);
 
             document.getElementById("loading").style.display = "block";
@@ -137,11 +134,10 @@
         }
 
         function clearPreviousMarkers() {
-            // Remove all markers from the map
             currentMarkers.forEach(marker => {
                 map.removeLayer(marker);
             });
-            currentMarkers = [];  // Clear the marker array
+            currentMarkers = [];  
         }
 
         function fetchUtilities(utilityType, maxDistance, lat, lon) {
@@ -194,7 +190,7 @@
                     .addTo(map)
                     .bindPopup(popupContent);
 
-                currentMarkers.push(marker);  // Store the marker for later removal
+                currentMarkers.push(marker);  
             });
         }
     </script>
