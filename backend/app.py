@@ -6,7 +6,6 @@ import subprocess
 
 app = Flask(__name__)
 
-# Run database creation script
 def run_creation_script():
     try:
         subprocess.run(['python', 'database_creation.py'], check=True)
@@ -14,7 +13,6 @@ def run_creation_script():
     except subprocess.CalledProcessError as e:
         print(f"Error running database creation script: {e}")
 
-# Establish connection to the database
 def get_db_connection():
     try:
         conn = mysql.connector.connect(
@@ -28,14 +26,12 @@ def get_db_connection():
         print(f"Error: {e}")
         return None
 
-# Fetch utilities based on type, max distance, and user location
 def get_utilities(utility_type, max_distance, user_lat, user_lon):
     conn = get_db_connection()
     utilities = []
     if conn:
         cursor = conn.cursor(dictionary=True)
         
-        # Define the SQL query based on the utility type
         queries = {
             "atm": """
                 SELECT a.name, a.address, l.latitude, l.longitude, a.phone, a.email, a.zip
@@ -65,11 +61,9 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
             """
         }
         
-        # Execute the appropriate query based on utility type
         if utility_type in queries:
             cursor.execute(queries[utility_type])
 
-            # Calculate distance and filter by max_distance
             for row in cursor.fetchall():
                 location = (row["latitude"], row["longitude"])
                 user_location = (user_lat, user_lon)
@@ -77,7 +71,6 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
                 if distance <= max_distance:
                     row["distance"] = round(distance, 2)
 
-                    # Fetch buses passing through bus stops
                     if utility_type == "bus_stop":
                         cursor.execute("""
                             SELECT b.bus_name
@@ -94,7 +87,6 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
 
     return utilities
 
-# API endpoint to fetch utilities
 @app.route('/get_utilities', methods=['GET'])
 def get_utilities_route():
     utility_type = request.args.get('type')
@@ -102,16 +94,14 @@ def get_utilities_route():
     user_lat = float(request.args.get('lat'))
     user_lon = float(request.args.get('lon'))
 
-    # Ensure max_distance is a valid float
     try:
-        max_distance = float(max_distance_str) if max_distance_str else 10.0  # Default to 10 km if empty
+        max_distance = float(max_distance_str) if max_distance_str else 10.0
     except ValueError:
-        max_distance = 10.0  # Default to 10 km if invalid value
+        max_distance = 10.0
 
     utilities = get_utilities(utility_type, max_distance, user_lat, user_lon)
     return jsonify(utilities)
 
-# Main route to render index.html
 @app.route('/')
 def index():
     run_creation_script()  
