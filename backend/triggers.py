@@ -6,7 +6,7 @@ def create_triggers():
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='Sarang@433',
+            password='root',
             database='utilities_locator',
         )
 
@@ -38,62 +38,6 @@ def create_triggers():
             END;
             '''
             cursor.execute(trigger_2)
-
-
-            trigger_3_atm = '''
-            CREATE TRIGGER update_atm_location
-            BEFORE UPDATE ON atm
-            FOR EACH ROW
-            BEGIN
-                -- Update address in location table
-                UPDATE location
-                SET location = NEW.address
-                WHERE location = OLD.address;
-            END;
-            '''
-            cursor.execute(trigger_3_atm)
-
-            trigger_3_mall = '''
-            CREATE TRIGGER update_mall_location
-            BEFORE UPDATE ON malls
-            FOR EACH ROW
-            BEGIN
-                -- Update address in location table
-                UPDATE location
-                SET location = NEW.address
-                WHERE location = OLD.address;
-            END;
-            '''
-            cursor.execute(trigger_3_mall)
-
-            trigger_3_bus_stop = '''
-            CREATE TRIGGER update_bus_stop_location
-            BEFORE UPDATE ON bus_stops
-            FOR EACH ROW
-            BEGIN
-                -- Update address in location table
-                UPDATE location
-                SET location = NEW.stop_name
-                WHERE location = OLD.stop_name;
-            END;
-            '''
-            cursor.execute(trigger_3_bus_stop)
-
-
-            trigger_4 = '''
-            CREATE TRIGGER update_metro_station_location
-            BEFORE UPDATE ON metro_station
-            FOR EACH ROW
-            BEGIN
-                -- Update address in additional_location table
-                UPDATE additional_location
-                SET location = NEW.station_name
-                WHERE location = OLD.station_name;
-            END;
-            '''
-            cursor.execute(trigger_4)
-
-            conn.commit()
             print("Triggers created successfully!")
 
     except Error as e:
