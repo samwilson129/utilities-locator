@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import geopy.distance
@@ -7,6 +9,8 @@ import subprocess
 app = Flask(__name__)
 initialized = False
 
+app = Flask(__name__)
+CORS(app)
 def run_creation_script():
     try:
         subprocess.run(['python', 'database_creation.py'], check=True)
