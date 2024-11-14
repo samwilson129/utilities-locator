@@ -16,7 +16,6 @@ const translations = {
     interactiveMap: "Interactive Map",
     nearbyFacilities: "Nearby Facilities (within {radius} km)",
     loading: "Loading facilities...",
-    locateMe: "Locate Me",
     settings: "Website Settings",
     mapStyle: "Map Style",
     theme: "Theme",
@@ -35,7 +34,6 @@ const translations = {
     interactiveMap: "इंटरैक्टिव मानचित्र",
     nearbyFacilities: "निकटवर्ती सुविधाएँ ({radius} किमी के भीतर)",
     loading: "सुविधाएँ लोड हो रही हैं...",
-    locateMe: "मुझे ढूंढें",
     settings: "वेबसाइट सेटिंग्स",
     mapStyle: "मानचित्र शैली",
     theme: "थीम",
@@ -54,7 +52,6 @@ const translations = {
     interactiveMap: "ಸಂವಾದಾತ್ಮಕ ನಕ್ಷೆ",
     nearbyFacilities: "ಹತ್ತಿರದ ಸೌಲಭ್ಯಗಳು ({radius} ಕಿ.ಮೀ ಒಳಗೆ)",
     loading: "ಸೌಲಭ್ಯಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
-    locateMe: "ನನ್ನನ್ನು ಪತ್ತೆಹಚ್ಚಿ",
     settings: "ವೆಬ್‌ಸೈಟ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
     mapStyle: "ನಕ್ಷೆ ಶೈಲಿ",
     theme: "ಥೀಮ್",
@@ -81,13 +78,35 @@ export default function Component() {
     theme: 'light',
     language: 'english',
   });
-  const [userLocation, setUserLocation] = useState({ lat: 0, lon: 0 });
+  const [userLocation, setUserLocation] = useState({ lat: 12.9716, lon: 77.5946 }); // Default to Bangalore
 
   const mapRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
+  const mapInstanceRef = useRef(null);
+  const markersRef = useRef([]);
 
   const t = translations[appSettings.language];
+
+  const updateMapMarkers = useCallback((facilities) => {
+    if (!mapInstanceRef.current) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+
+    // Add new markers
+    facilities.forEach(facility => {
+      const marker = L.marker([facility.latitude, facility.longitude])
+        .addTo(mapInstanceRef.current)
+        .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}`);
+      markersRef.current.push(marker);
+    });
+
+    // Fit map to markers
+    if (markersRef.current.length > 0) {
+      const group = L.featureGroup(markersRef.current);
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
+    }
+  }, []);
 
   const fetchFacilities = useCallback(async () => {
     setIsLoading(true);
@@ -104,7 +123,25 @@ export default function Component() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeTab, searchRadius, userLocation]);
+  }, [activeTab, searchRadius, userLocation, updateMapMarkers]);
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude
+          });
+        },
+        function(error) {
+          console.error("Error getting user location:", error);
+        }
+      );
+    } else {
+      console.log("Geolocation is not available in your browser.");
+    }
+  }, []);
 
   useEffect(() => {
     if (userLocation.lat !== 0 && userLocation.lon !== 0) {
@@ -113,57 +150,28 @@ export default function Component() {
   }, [fetchFacilities, userLocation]);
 
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || mapInstanceRef.current) return;
 
-    const newMap = L.map(mapRef.current).setView([0, 0], 13);
+    mapInstanceRef.current = L.map(mapRef.current).setView([userLocation.lat, userLocation.lon], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(newMap);
-
-    setMap(newMap);
+    }).addTo(mapInstanceRef.current);
 
     return () => {
-      newMap.remove();
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
     };
-  }, []);
+  }, [userLocation]);
 
   useEffect(() => {
+    const map = mapInstanceRef.current;
     if (map && userLocation.lat !== 0 && userLocation.lon !== 0) {
       map.setView([userLocation.lat, userLocation.lon], 13);
       L.marker([userLocation.lat, userLocation.lon]).addTo(map);
     }
-  }, [map, userLocation]);
-
-  const updateMapMarkers = (facilities) => {
-    if (!map) return;
-
-    // Clear existing markers
-    markers.forEach(marker => map.removeLayer(marker));
-
-    // Add new markers
-    const newMarkers = facilities.map(facility => {
-      const marker = L.marker([facility.latitude, facility.longitude])
-        .addTo(map)
-        .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}`);
-      return marker;
-    });
-
-    setMarkers(newMarkers);
-  };
-
-  useEffect(() => {
-    // Get user's location when component mounts
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(function(position) {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        });
-      });
-    } else {
-      console.log("Geolocation is not available in your browser.");
-    }
-  }, []);
+  }, [userLocation, mapInstanceRef]);
 
   const filteredFacilities = facilities.filter(facility => 
     facility.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -187,23 +195,13 @@ export default function Component() {
     }
   };
 
-  const handleLocateMe = () => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(function(position) {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lon: position.coords.longitude
-        });
-      });
-    } else {
-      console.log("Geolocation is not available in your browser.");
-    }
-  };
-
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    fetchFacilities();
   };
+
+  useEffect(() => {
+    fetchFacilities();
+  }, [activeTab, searchRadius, fetchFacilities]);
 
   const SettingsPanel = () => (
     <div className="settings-panel">
@@ -382,8 +380,6 @@ export default function Component() {
             </div>
           )}
         </section>
-
-        <button className="locate-button" onClick={handleLocateMe}>{t.locateMe}</button>
       </main>
     </div>
   );
