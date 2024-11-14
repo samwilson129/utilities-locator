@@ -4,6 +4,7 @@ from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
 import geopy.distance
+from datetime import datetime
 import subprocess
 
 app = Flask(__name__)
@@ -20,17 +21,32 @@ def run_creation_script():
 
 def run_trigger_creation():
     try:
-        subprocess.run(['python', 'triggers.py'], check=True)  
+        subprocess.run(['python', 'triggers.py'], check=True)
         print("Trigger creation script executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error running trigger creation script: {e}")
+
+def run_procedure_creation():
+    try:
+        subprocess.run(['python', 'procedures.py'], check=True)
+        print("Procedure creation script executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error running procedure creation script: {e}")
+def run_keys_creation():
+    try:
+        subprocess.run(['python', 'keys.py'], check=True)
+        print("keys creation script executed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error running key creation script: {e}")
 
 @app.before_request
 def initialize():
     global initialized
     if not initialized:
         run_creation_script()
+        run_keys_creation()
         run_trigger_creation()
+        run_procedure_creation()
         initialized = True
 
 def get_db_connection():
@@ -38,7 +54,7 @@ def get_db_connection():
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='Sarang@433',
+            password='root',
             database='utilities_locator'
         )
         return conn
@@ -106,6 +122,34 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
         conn.close()
 
     return utilities
+
+def report_utility(utility_type, name, action, reason):
+    conn = get_db_connection()
+    if conn:
+        cursor = conn.cursor()
+        try:
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute("INSERT INTO report (utility_type, name, action, reason) VALUES (%s, %s, %s, %s);",
+                           (utility_type, name, action, reason))
+            conn.commit()
+            return True
+        except Error as e:
+            print(f"Error: {e}")
+            return False
+        finally:
+            cursor.close()
+            conn.close()
+    return False
+
+@app.route('/report_utility', methods=['POST'])
+def report_utility_route():
+    data = request.get_json()
+    utility_type = data.get('type')
+    name = data.get('name')
+    action = data.get('action')
+    reason = data.get('reason')
+    success = report_utility(utility_type, name, action, reason)
+    return jsonify({"success": success})
 
 @app.route('/get_utilities', methods=['GET'])
 def get_utilities_route():

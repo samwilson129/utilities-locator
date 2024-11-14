@@ -48,6 +48,34 @@
             margin-top: 20px;
             color: red;
         }
+        #reportModal {
+            display: none;
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            z-index: 999;
+            width: 300px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #reportModal input,
+        #reportModal select,
+        #reportModal textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+        #reportModal button {
+            padding: 10px 20px;
+        }
+        #reportModal button[type="button"] {
+            background-color: red;
+            color: white;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -75,9 +103,33 @@
 
     <div id="map"></div>
 
+    <div id="reportModal">
+        <h3>Report Utility</h3>
+        <form id="reportForm">
+            <label for="utility_type">Utility Type:</label>
+            <input type="text" id="utility_type" name="utility_type" required><br>
+
+            <label for="name">Utility Name:</label>
+            <input type="text" id="name" name="name" required><br>
+
+            <label for="action">Action:</label>
+            <select id="action" name="action">
+                <option value="update">Update</option>
+                <option value="delete">Delete</option>
+            </select><br>
+
+            <label for="reason">Reason:</label>
+            <textarea id="reason" name="reason" required></textarea><br>
+
+            <button type="submit">Submit Report</button>
+            <button type="button" onclick="closeReportModal()">Cancel</button>
+        </form>
+    </div>
+
     <script>
         let map, userMarker, routingControl;
-        let currentMarkers = [];  // Array to hold the markers for easy removal
+        let currentMarkers = [];
+        let reportUtilityId = null;
 
         function initMap(lat, lon) {
             map = L.map('map').setView([lat, lon], 13);
@@ -116,7 +168,7 @@
 
         function searchUtilities() {
             const utilityType = document.getElementById("utilityType").value;
-            const maxDistance = document.getElementById("maxDistance").value || 10;  // Default to 10 km
+            const maxDistance = document.getElementById("maxDistance").value || 10;  
             const { lat, lng } = userMarker.getLatLng();
 
             if (!utilityType) {
@@ -178,21 +230,65 @@
                 if (utility.rest_type) popupContent += `<br>Type: ${utility.rest_type}`;
                 if (utility.dish_liked) popupContent += `<br>Dish Liked: ${utility.dish_liked}`;
                 if (utility.cuisines) popupContent += `<br>Cuisines: ${utility.cuisines}`;
-                if (utility.approx_cost) popupContent += `<br>Approx. Cost: ₹${utility.approx_cost}`;
                 if (utility.listed_in) popupContent += `<br>Listed in: ${utility.listed_in}`;
+                if (utility.dining_type) popupContent += `<br>Dining Type: ${utility.dining_type}`;
+                if (utility.time) popupContent += `<br>Time: ${utility.time}`;
+                if (utility.rating) popupContent += `<br>Rating: ${utility.rating}`;
 
-                // For bus stop, show buses passing through
-                if (utility.buses) {
-                    popupContent += `<br>Buses passing through: ${utility.buses.join(", ")}`;
-                }
+                popupContent += `<br><button onclick="openReportModal('${utility.id}', '${utility.name}')">Report Utility</button>`;
 
                 const marker = L.marker([utility.latitude, utility.longitude])
                     .addTo(map)
                     .bindPopup(popupContent);
 
-                currentMarkers.push(marker);  
+                currentMarkers.push(marker);
             });
         }
+
+        function openReportModal(utilityId, utilityName) {
+            reportUtilityId = utilityId;
+            document.getElementById('utility_type').value = 'utility';  
+            document.getElementById('name').value = utilityName;
+            document.getElementById('reportModal').style.display = 'block';
+        }
+
+        function closeReportModal() {
+            document.getElementById('reportModal').style.display = 'none';
+        }
+
+        document.getElementById('reportForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const utilityType = document.getElementById('utility_type').value;
+            const name = document.getElementById('name').value;
+            const action = document.getElementById('action').value;
+            const reason = document.getElementById('reason').value;
+
+            fetch('/report_utility', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    type: utilityType,
+                    name: name,
+                    action: action,
+                    reason: reason
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Report submitted successfully');
+                    closeReportModal();
+                } else {
+                    alert('Error submitting report');
+                }
+            })
+            .catch(() => {
+                alert('Error submitting report');
+            });
+        });
     </script>
+
 </body>
 </html>
