@@ -6,7 +6,7 @@ def initialize_database():
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='root'
+            password='Sarang@433'
         )
         
         if conn.is_connected():
@@ -128,7 +128,7 @@ def run_insert_statements_from_file(sql_file_path):
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='root',
+            password='Sarang@433',
             database='utilities_locator',
         )
         
