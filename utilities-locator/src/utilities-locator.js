@@ -7,6 +7,14 @@ import { API_URL } from './config';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// Fix for default marker icon
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
 // Language translations
 const translations = {
   english: {
@@ -83,6 +91,7 @@ export default function Component() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const radiusCircleRef = useRef(null);
 
   const t = translations[appSettings.language];
 
@@ -93,31 +102,61 @@ export default function Component() {
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
+    // Clear existing radius circle
+    if (radiusCircleRef.current) {
+      radiusCircleRef.current.remove();
+    }
+
+    // Add radius circle
+    radiusCircleRef.current = L.circle([userLocation.lat, userLocation.lon], {
+      radius: searchRadius * 1000, // Convert km to meters
+      color: 'blue',
+      fillColor: '#30f',
+      fillOpacity: 0.1
+    }).addTo(mapInstanceRef.current);
+
     // Add new markers
     facilities.forEach(facility => {
-      const marker = L.marker([facility.latitude, facility.longitude])
-        .addTo(mapInstanceRef.current)
-        .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}`);
-      markersRef.current.push(marker);
+      // Calculate distance using Haversine formula
+      const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
+      const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
+      const distance = (userLatLng.distanceTo(facilityLatLng) / 1000).toFixed(2); // Convert meters to km
+
+      if (parseFloat(distance) <= searchRadius) {
+        const marker = L.marker([facility.latitude, facility.longitude])
+          .addTo(mapInstanceRef.current)
+          .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}<br>Distance: ${distance} km`);
+        markersRef.current.push(marker);
+      }
     });
 
-    // Fit map to markers
-    if (markersRef.current.length > 0) {
-      const group = L.featureGroup(markersRef.current);
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.1));
+    // Fit map to radius circle
+    if (radiusCircleRef.current) {
+      mapInstanceRef.current.fitBounds(radiusCircleRef.current.getBounds());
     }
-  }, []);
+  }, [searchRadius, userLocation.lat, userLocation.lon]);
 
   const fetchFacilities = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/get_utilities?type=${activeTab}&distance=${searchRadius}&lat=${userLocation.lat}&lon=${userLocation.lon}`);
+      const response = await fetch(
+        `${API_URL}/get_utilities?type=${activeTab}&distance=${searchRadius}&lat=${userLocation.lat}&lon=${userLocation.lon}`
+      );
       if (!response.ok) {
         throw new Error('Failed to fetch facilities');
       }
       const data = await response.json();
-      setFacilities(data);
-      updateMapMarkers(data);
+      
+      // Filter facilities based on actual distance calculation
+      const filteredData = data.filter(facility => {
+        const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
+        const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
+        const distance = userLatLng.distanceTo(facilityLatLng) / 1000; // Convert meters to km
+        return distance <= searchRadius;
+      });
+
+      setFacilities(filteredData);
+      updateMapMarkers(filteredData);
     } catch (error) {
       console.error('Error fetching facilities:', error);
     } finally {
@@ -157,13 +196,21 @@ export default function Component() {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapInstanceRef.current);
 
+    // Add initial radius circle
+    radiusCircleRef.current = L.circle([userLocation.lat, userLocation.lon], {
+      radius: searchRadius * 1000,
+      color: 'blue',
+      fillColor: '#30f',
+      fillOpacity: 0.1
+    }).addTo(mapInstanceRef.current);
+
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [userLocation]);
+  }, [userLocation, searchRadius]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -171,7 +218,7 @@ export default function Component() {
       map.setView([userLocation.lat, userLocation.lon], 13);
       L.marker([userLocation.lat, userLocation.lon]).addTo(map);
     }
-  }, [userLocation, mapInstanceRef]);
+  }, [userLocation]);
 
   const filteredFacilities = facilities.filter(facility => 
     facility.name.toLowerCase().includes(searchQuery.toLowerCase())
