@@ -92,6 +92,7 @@ export default function Component() {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const radiusCircleRef = useRef(null);
+  const userMarkerRef = useRef(null);
 
   const t = translations[appSettings.language];
 
@@ -117,18 +118,34 @@ export default function Component() {
 
     // Add new markers
     facilities.forEach(facility => {
-      // Calculate distance using Haversine formula
-      const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
-      const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
-      const distance = (userLatLng.distanceTo(facilityLatLng) / 1000).toFixed(2); // Convert meters to km
-
-      if (parseFloat(distance) <= searchRadius) {
-        const marker = L.marker([facility.latitude, facility.longitude])
-          .addTo(mapInstanceRef.current)
-          .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}<br>Distance: ${distance} km`);
-        markersRef.current.push(marker);
-      }
+      const marker = L.marker([facility.latitude, facility.longitude])
+        .addTo(mapInstanceRef.current)
+        .bindPopup(`<b>${facility.name}</b><br>${facility.address || ''}<br>Distance: ${facility.distance.toFixed(2)} km`);
+      markersRef.current.push(marker);
     });
+
+    // Update user location marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lon]);
+    } else {
+      userMarkerRef.current = L.marker([userLocation.lat, userLocation.lon], {
+        draggable: true,
+        icon: L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        })
+      }).addTo(mapInstanceRef.current);
+
+      userMarkerRef.current.on('dragend', function(event) {
+        const marker = event.target;
+        const position = marker.getLatLng();
+        setUserLocation({ lat: position.lat, lon: position.lng });
+      });
+    }
 
     // Fit map to radius circle
     if (radiusCircleRef.current) {
@@ -147,11 +164,12 @@ export default function Component() {
       }
       const data = await response.json();
       
-      // Filter facilities based on actual distance calculation
+      // Filter and calculate distances for facilities
       const filteredData = data.filter(facility => {
         const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
         const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
         const distance = userLatLng.distanceTo(facilityLatLng) / 1000; // Convert meters to km
+        facility.distance = distance; // Add distance to facility object
         return distance <= searchRadius;
       });
 
@@ -175,7 +193,8 @@ export default function Component() {
         },
         function(error) {
           console.error("Error getting user location:", error);
-        }
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
       );
     } else {
       console.log("Geolocation is not available in your browser.");
@@ -204,19 +223,40 @@ export default function Component() {
       fillOpacity: 0.1
     }).addTo(mapInstanceRef.current);
 
+    // Add user location marker
+    userMarkerRef.current = L.marker([userLocation.lat, userLocation.lon], {
+      draggable: true,
+      icon: L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      })
+    }).addTo(mapInstanceRef.current);
+
+    userMarkerRef.current.on('dragend', function(event) {
+      const marker = event.target;
+      const position = marker.getLatLng();
+      setUserLocation({ lat: position.lat, lon: position.lng });
+    });
+
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [userLocation, searchRadius]);
+  }, []);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (map && userLocation.lat !== 0 && userLocation.lon !== 0) {
       map.setView([userLocation.lat, userLocation.lon], 13);
-      L.marker([userLocation.lat, userLocation.lon]).addTo(map);
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lon]);
+      }
     }
   }, [userLocation]);
 
@@ -409,7 +449,7 @@ export default function Component() {
                 <div key={index} className="facility-card">
                   <h3>{facility.name}</h3>
                   <p>Type: {activeTab}</p>
-                  <p>Distance: {facility.distance} km</p>
+                  <p>Distance: {facility.distance.toFixed(2)} km</p>
                   {facility.address && <p>Address: {facility.address}</p>}
                   {facility.phone && <p>Phone: {facility.phone}</p>}
                   {facility.email && <p>Email: {facility.email}</p>}
