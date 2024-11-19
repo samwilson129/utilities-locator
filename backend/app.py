@@ -1,5 +1,4 @@
 from flask import Flask, render_template, request, jsonify
-from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import mysql.connector
 from mysql.connector import Error
@@ -8,10 +7,9 @@ from datetime import datetime
 import subprocess
 
 app = Flask(__name__)
+CORS(app)
 initialized = False
 
-app = Flask(__name__)
-CORS(app)
 def run_creation_script():
     try:
         subprocess.run(['python', 'database_creation.py'], check=True)
@@ -32,10 +30,11 @@ def run_procedure_creation():
         print("Procedure creation script executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error running procedure creation script: {e}")
+
 def run_keys_creation():
     try:
         subprocess.run(['python', 'keys.py'], check=True)
-        print("keys creation script executed successfully.")
+        print("Keys creation script executed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error running key creation script: {e}")
 
@@ -54,7 +53,7 @@ def get_db_connection():
         conn = mysql.connector.connect(
             host='localhost',
             user='root',
-            password='Sarang@433',
+            password='root',
             database='utilities_locator'
         )
         return conn
@@ -67,7 +66,6 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
     utilities = []
     if conn:
         cursor = conn.cursor(dictionary=True)
-        
         queries = {
             "atm": """
                 SELECT a.name, a.address, l.latitude, l.longitude, a.phone, a.email, a.zip
@@ -96,17 +94,14 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
                 JOIN location l ON r.location = l.location;
             """
         }
-        
         if utility_type in queries:
             cursor.execute(queries[utility_type])
-
             for row in cursor.fetchall():
                 location = (row["latitude"], row["longitude"])
                 user_location = (user_lat, user_lon)
                 distance = geopy.distance.distance(user_location, location).km
                 if distance <= max_distance:
                     row["distance"] = round(distance, 2)
-
                     if utility_type == "bus_stop":
                         cursor.execute(""" 
                             SELECT b.bus_name
@@ -115,12 +110,9 @@ def get_utilities(utility_type, max_distance, user_lat, user_lon):
                         """, (row["name"],))
                         buses = cursor.fetchall()
                         row["buses"] = [bus["bus_name"] for bus in buses]
-
                     utilities.append(row)
-
         cursor.close()
         conn.close()
-
     return utilities
 
 def report_utility(utility_type, name, action, reason):
@@ -128,12 +120,10 @@ def report_utility(utility_type, name, action, reason):
     if conn:
         cursor = conn.cursor()
         try:
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            cursor.execute("INSERT INTO report (utility_type, name, action, reason) VALUES (%s, %s, %s, %s);",
-                           (utility_type, name, action, reason))
+            cursor.callproc('report_utility', [utility_type, name, action, reason])
             conn.commit()
             return True
-        except Error as e:
+        except mysql.connector.Error as e:
             print(f"Error: {e}")
             return False
         finally:
@@ -157,12 +147,10 @@ def get_utilities_route():
     max_distance_str = request.args.get('distance')
     user_lat = float(request.args.get('lat'))
     user_lon = float(request.args.get('lon'))
-
     try:
         max_distance = float(max_distance_str) if max_distance_str else 10.0
     except ValueError:
         max_distance = 10.0
-
     utilities = get_utilities(utility_type, max_distance, user_lat, user_lon)
     return jsonify(utilities)
 
