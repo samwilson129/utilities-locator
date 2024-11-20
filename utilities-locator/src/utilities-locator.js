@@ -34,6 +34,7 @@ const translations = {
     malls: "Malls",
     restaurants: "Restaurants",
     atms: "ATMs",
+    noFacilitiesFound: "No facilities found within the specified radius.",
   },
   hindi: {
     siteTitle: "खोजें",
@@ -52,6 +53,7 @@ const translations = {
     malls: "मॉल",
     restaurants: "रेस्तरां",
     atms: "एटीएम",
+    noFacilitiesFound: "निर्दिष्ट त्रिज्या के भीतर कोई सुविधा नहीं मिली।",
   },
   kannada: {
     siteTitle: "ಹುಡುಕಿ",
@@ -70,6 +72,7 @@ const translations = {
     malls: "ಮಾಲ್‌ಗಳು",
     restaurants: "ರೆಸ್ಟೋರೆಂಟ್‌ಗಳು",
     atms: "ಎಟಿಎಂಗಳು",
+    noFacilitiesFound: "ನಿರ್ದಿಷ್ಟಪಡಿಸಿದ ತ್ರಿಜ್ಯದ ಒಳಗೆ ಯಾವುದೇ ಸೌಲಭ್ಯಗಳು ಕಂಡುಬಂದಿಲ್ಲ.",
   },
 };
 
@@ -98,6 +101,8 @@ export default function Component() {
 
   const updateMapMarkers = useCallback((facilities) => {
     if (!mapInstanceRef.current) return;
+
+    console.log('Adding markers:', facilities.length); // Added console.log statement
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
@@ -147,10 +152,9 @@ export default function Component() {
       });
     }
 
-    // Fit map to radius circle
-    if (radiusCircleRef.current) {
-      mapInstanceRef.current.fitBounds(radiusCircleRef.current.getBounds());
-    }
+    // Fit map to show all markers and radius circle
+    const group = L.featureGroup([...markersRef.current, radiusCircleRef.current]);
+    mapInstanceRef.current.fitBounds(group.getBounds());
   }, [searchRadius, userLocation.lat, userLocation.lon]);
 
   const fetchFacilities = useCallback(async () => {
@@ -163,7 +167,7 @@ export default function Component() {
         throw new Error('Failed to fetch facilities');
       }
       const data = await response.json();
-      
+
       // Filter and calculate distances for facilities
       const filteredData = data.filter(facility => {
         const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
@@ -173,10 +177,25 @@ export default function Component() {
         return distance <= searchRadius;
       });
 
-      setFacilities(filteredData);
-      updateMapMarkers(filteredData);
+      // Deduplicate facilities based on name, latitude, and longitude
+      const uniqueData = filteredData.reduce((acc, current) => {
+        const key = `${current.name}-${current.latitude.toFixed(6)}-${current.longitude.toFixed(6)}`;
+        if (!acc.some(item => `${item.name}-${item.latitude.toFixed(6)}-${item.longitude.toFixed(6)}` === key)) {
+          acc.push(current);
+        }
+        return acc;
+      }, []);
+
+      console.log('Unique facilities:', uniqueData.length); // Added console.log statement
+
+      // Sort facilities by distance
+      uniqueData.sort((a, b) => a.distance - b.distance);
+
+      setFacilities(uniqueData);
+      updateMapMarkers(uniqueData);
     } catch (error) {
       console.error('Error fetching facilities:', error);
+      setFacilities([]); // Clear facilities on error
     } finally {
       setIsLoading(false);
     }
@@ -284,6 +303,7 @@ export default function Component() {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+    fetchFacilities();
   };
 
   useEffect(() => {
@@ -443,10 +463,12 @@ export default function Component() {
           <h2>{t.nearbyFacilities.replace('{radius}', searchRadius)}</h2>
           {isLoading ? (
             <p className="loading">{t.loading}</p>
+          ) : filteredFacilities.length === 0 ? (
+            <p>{t.noFacilitiesFound}</p>
           ) : (
             <div className="facilities-grid">
               {filteredFacilities.map((facility, index) => (
-                <div key={index} className="facility-card">
+                <div key={`${facility.name}-${facility.latitude}-${facility.longitude}`} className="facility-card">
                   <h3>{facility.name}</h3>
                   <p>Type: {activeTab}</p>
                   <p>Distance: {facility.distance.toFixed(2)} km</p>
