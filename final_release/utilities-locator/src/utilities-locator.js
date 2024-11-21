@@ -23,10 +23,8 @@ const translations = {
     nearbyFacilities: "Nearby Facilities (within {radius} km)",
     loading: "Loading facilities...",
     settings: "Website Settings",
-    mapStyle: "Map Style",
     theme: "Theme",
     language: "Language",
-    all: "All",
     metro: "Metro",
     busStands: "Bus Stands",
     malls: "Malls",
@@ -51,10 +49,8 @@ const translations = {
     nearbyFacilities: "निकटवर्ती सुविधाएँ ({radius} किमी के भीतर)",
     loading: "सुविधाएँ लोड हो रही हैं...",
     settings: "वेबसाइट सेटिंग्स",
-    mapStyle: "मानचित्र शैली",
     theme: "थीम",
     language: "भाषा",
-    all: "सभी",
     metro: "मेट्रो",
     busStands: "बस स्टैंड",
     malls: "मॉल",
@@ -79,10 +75,8 @@ const translations = {
     nearbyFacilities: "ಹತ್ತಿರದ ಸೌಲಭ್ಯಗಳು ({radius} ಕಿ.ಮೀ ಒಳಗೆ)",
     loading: "ಸೌಲಭ್ಯಗಳನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ...",
     settings: "ವೆಬ್‌ಸೈಟ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು",
-    mapStyle: "ನಕ್ಷೆ ಶೈಲಿ",
     theme: "ಥೀಮ್",
     language: "ಭಾಷೆ",
-    all: "ಎಲ್ಲಾ",
     metro: "ಮೆಟ್ರೋ",
     busStands: "ಬಸ್ ನಿಲ್ದಾಣಗಳು",
     malls: "ಮಾಲ್‌ಗಳು",
@@ -110,7 +104,6 @@ export default function Component() {
   const [searchRadius, setSearchRadius] = useState(5);
   const [radiusError, setRadiusError] = useState('');
   const [appSettings, setAppSettings] = useState({
-    mapStyle: 'street',
     theme: 'light',
     language: 'english',
   });
@@ -360,18 +353,6 @@ export default function Component() {
         <button onClick={() => setShowSettings(false)}><X size={24} /></button>
       </div>
       <div className="settings-content">
-        <div className="setting-item">
-          <label htmlFor="mapStyle">{t.mapStyle}:</label>
-          <select
-            id="mapStyle"
-            value={appSettings.mapStyle}
-            onChange={(e) => handleSettingChange('mapStyle', e.target.value)}
-          >
-            <option value="street">Street</option>
-            <option value="satellite">Satellite</option>
-            <option value="terrain">Terrain</option>
-          </select>
-        </div>
         <div className="setting-item">
           <label htmlFor="theme">{t.theme}:</label>
           <select
