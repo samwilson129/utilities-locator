@@ -7,7 +7,6 @@ import { API_URL } from './config';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -15,7 +14,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Language translations
 const translations = {
   english: {
     siteTitle: "FIND-IT",
@@ -34,6 +32,16 @@ const translations = {
     malls: "Malls",
     restaurants: "Restaurants",
     atms: "ATMs",
+    report: "Report Issue",
+    reportUtility: "Report Utility",
+    action: "Action",
+    reason: "Reason",
+    submit: "Submit",
+    cancel: "Cancel",
+    update: "Update",
+    delete: "Delete",
+    reportSuccess: "Report submitted successfully",
+    reportError: "Failed to submit report",
   },
   hindi: {
     siteTitle: "खोजें",
@@ -52,6 +60,16 @@ const translations = {
     malls: "मॉल",
     restaurants: "रेस्तरां",
     atms: "एटीएम",
+    report: "रिपोर्ट",
+    reportUtility: "उपयोगिता की रिपोर्ट करें",
+    action: "कार्रवाई",
+    reason: "कारण",
+    submit: "जमा करें",
+    cancel: "रद्द करें",
+    update: "अपडेट",
+    delete: "हटाएं",
+    reportSuccess: "रिपोर्ट सफलतापूर्वक जमा की गई",
+    reportError: "रिपोर्ट जमा करने में विफल",
   },
   kannada: {
     siteTitle: "ಹುಡುಕಿ",
@@ -70,6 +88,16 @@ const translations = {
     malls: "ಮಾಲ್‌ಗಳು",
     restaurants: "ರೆಸ್ಟೋರೆಂಟ್‌ಗಳು",
     atms: "ಎಟಿಎಂಗಳು",
+    report: "ವರದಿ",
+    reportUtility: "ಉಪಯುಕ್ತತೆಯನ್ನು ವರದಿ ಮಾಡಿ",
+    action: "ಕ್ರಿಯೆ",
+    reason: "ಕಾರಣ",
+    submit: "ಸಲ್ಲಿಸು",
+    cancel: "ರದ್ದುಮಾಡು",
+    update: "ನವೀಕರಿಸು",
+    delete: "ಅಳಿಸು",
+    reportSuccess: "ವರದಿಯನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಸಲ್ಲಿಸಲಾಗಿದೆ",
+    reportError: "ವರದಿ ಸಲ್ಲಿಸಲು ವಿಫಲವಾಗಿದೆ",
   },
 };
 
@@ -86,7 +114,14 @@ export default function Component() {
     theme: 'light',
     language: 'english',
   });
-  const [userLocation, setUserLocation] = useState({ lat: 12.9716, lon: 77.5946 }); // Default to Bangalore
+  const [userLocation, setUserLocation] = useState({ lat: 12.9716, lon: 77.5946 });
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportData, setReportData] = useState({
+    type: '',
+    name: '',
+    action: 'update',
+    reason: '',
+  });
 
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -99,24 +134,20 @@ export default function Component() {
   const updateMapMarkers = useCallback((facilities) => {
     if (!mapInstanceRef.current) return;
 
-    // Clear existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Clear existing radius circle
     if (radiusCircleRef.current) {
       radiusCircleRef.current.remove();
     }
 
-    // Add radius circle
     radiusCircleRef.current = L.circle([userLocation.lat, userLocation.lon], {
-      radius: searchRadius * 1000, // Convert km to meters
+      radius: searchRadius * 1000,
       color: 'blue',
       fillColor: '#30f',
       fillOpacity: 0.1
     }).addTo(mapInstanceRef.current);
 
-    // Add new markers
     facilities.forEach(facility => {
       const marker = L.marker([facility.latitude, facility.longitude])
         .addTo(mapInstanceRef.current)
@@ -124,7 +155,6 @@ export default function Component() {
       markersRef.current.push(marker);
     });
 
-    // Update user location marker
     if (userMarkerRef.current) {
       userMarkerRef.current.setLatLng([userLocation.lat, userLocation.lon]);
     } else {
@@ -147,7 +177,6 @@ export default function Component() {
       });
     }
 
-    // Fit map to radius circle
     if (radiusCircleRef.current) {
       mapInstanceRef.current.fitBounds(radiusCircleRef.current.getBounds());
     }
@@ -164,12 +193,11 @@ export default function Component() {
       }
       const data = await response.json();
       
-      // Filter and calculate distances for facilities
       const filteredData = data.filter(facility => {
         const facilityLatLng = L.latLng(facility.latitude, facility.longitude);
         const userLatLng = L.latLng(userLocation.lat, userLocation.lon);
-        const distance = userLatLng.distanceTo(facilityLatLng) / 1000; // Convert meters to km
-        facility.distance = distance; // Add distance to facility object
+        const distance = userLatLng.distanceTo(facilityLatLng) / 1000;
+        facility.distance = distance;
         return distance <= searchRadius;
       });
 
@@ -215,7 +243,6 @@ export default function Component() {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(mapInstanceRef.current);
 
-    // Add initial radius circle
     radiusCircleRef.current = L.circle([userLocation.lat, userLocation.lon], {
       radius: searchRadius * 1000,
       color: 'blue',
@@ -223,7 +250,6 @@ export default function Component() {
       fillOpacity: 0.1
     }).addTo(mapInstanceRef.current);
 
-    // Add user location marker
     userMarkerRef.current = L.marker([userLocation.lat, userLocation.lon], {
       draggable: true,
       icon: L.icon({
@@ -290,6 +316,37 @@ export default function Component() {
     fetchFacilities();
   }, [activeTab, searchRadius, fetchFacilities]);
 
+  const handleReportClick = (facility) => {
+    setReportData({
+      type: activeTab,
+      name: facility.name,
+      action: 'update',
+      reason: '',
+    });
+    setShowReportModal(true);
+  };
+
+  const handleReportSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${API_URL}/report_utility`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to submit report');
+      }
+      setShowReportModal(false);
+      alert(t.reportSuccess);
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert(t.reportError);
+    }
+  };
+
   const SettingsPanel = () => (
     <div className="settings-panel">
       <div className="settings-header">
@@ -332,6 +389,51 @@ export default function Component() {
             <option value="kannada">ಕನ್ನಡ</option>
           </select>
         </div>
+      </div>
+    </div>
+  );
+
+  const ReportModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+        <h2 className="text-2xl font-bold mb-4">{t.reportUtility}</h2>
+        <form onSubmit={handleReportSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">{t.action}</label>
+            <select
+              value={reportData.action}
+              onChange={(e) => setReportData({ ...reportData, action: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+            >
+              <option value="update">{t.update}</option>
+              <option value="delete">{t.delete}</option>
+            </select>
+          </div>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700">{t.reason}</label>
+            <textarea
+              value={reportData.reason}
+              onChange={(e) => setReportData({ ...reportData, reason: e.target.value })}
+              className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+              rows="3"
+            ></textarea>
+          </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowReportModal(false)}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {t.cancel}
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              {t.submit}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -456,12 +558,20 @@ export default function Component() {
                   {facility.rate && <p>Rating: {facility.rate}</p>}
                   {facility.cuisines && <p>Cuisines: {facility.cuisines}</p>}
                   {facility.approx_cost && <p>Approximate Cost: {facility.approx_cost}</p>}
+                  <button
+                    onClick={() => handleReportClick(facility)}
+                    className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
+                  >
+                    {t.report}
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </section>
       </main>
+
+      {showReportModal && <ReportModal />}
     </div>
   );
 }
